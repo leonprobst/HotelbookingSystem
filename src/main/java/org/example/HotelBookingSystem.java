@@ -11,67 +11,12 @@ import java.util.*;
 import java.util.List;
 import java.util.regex.Pattern;
 
-class Booking {
-    String name;
-    String roomType;
-    String dateFrom;
-    String dateTo;
-    int persons;
-    int price;
-    int index;
-
-    Booking(String name, String roomType, String dateFrom, String dateTo, int persons, int price, int index) {
-        this.name = name;
-        this.roomType = roomType;
-        this.dateFrom = dateFrom;
-        this.dateTo = dateTo;
-        this.persons = persons;
-        this.index = index;
-        this.price = price;
-    }
-
-    @Override
-    public String toString() {
-        return "[Name: " + name + "] [Roomtype: " + roomType + "] [Date: " + dateFrom + " to " + dateTo + "] [Persons: " + persons + "] [Price: " + price + "] [Index: " + index + "] (" + getNumberOfNights() + " nights)";
-    }
-
-    public int getNumberOfNights() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        try {
-            Date fromDate = sdf.parse(dateFrom);
-            Date toDate = sdf.parse(dateTo);
-            long diff = toDate.getTime() - fromDate.getTime();
-            return (int) (diff / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-
-    // Neue Methode zur Validierung der Datumseingabe
-    public static boolean isValidDate(String dateStr) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        sdf.setLenient(false); // Setze auf false, um strikte Datumsvalidierung zu erzwingen
-        try {
-            sdf.parse(dateStr);
-        } catch (ParseException e) {
-            return false;
-        }
-        return true;
-    }
-}
-
-class Room {
-    String type;
-    int quantity;
-
-    Room(String type, int quantity) {
-        this.type = type;
-        this.quantity = quantity;
-    }
-}
-
+/**
+ * GUI-Anwendung für ein Hotel-Buchungssystem.
+ */
 public class HotelBookingSystem extends JFrame {
+
+    // GUI-Komponenten
     private DefaultListModel<Booking> bookingListModel;
     private JList<Booking> bookingList;
     private JTextField nameField;
@@ -85,6 +30,8 @@ public class HotelBookingSystem extends JFrame {
     private JButton adminLoginButton;
     private JButton adminLogoutButton;
     private JButton showAvailabilityButton;
+
+    // Zustände und Daten für das Hotel-Buchungssystem
     private boolean isAdmin = false;
     private ArrayList<Booking> allBookings = new ArrayList<>();
     private List<Room> roomAvailability = new ArrayList<>();
@@ -93,7 +40,12 @@ public class HotelBookingSystem extends JFrame {
     private int doublePrice = 250;
     private int suitePrice = 400;
 
+    /**
+     * Konstruktor für das Hotel-Buchungssystem GUI.
+     * Initialisiert die GUI-Komponenten und die Startwerte für das System.
+     */
     public HotelBookingSystem() {
+        // Initialisierung des Hauptfensters
         setTitle("Hotel Booking System");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -104,11 +56,13 @@ public class HotelBookingSystem extends JFrame {
         roomAvailability.add(new Room("Double (2 Persons) ("+ doublePrice + "€)", 6));
         roomAvailability.add(new Room("Suite (4 Persons) ("+ suitePrice +"€)", 4));
 
+        // Initialisierung der Buchungsliste
         bookingListModel = new DefaultListModel<>();
         bookingList = new JList<>(bookingListModel);
         bookingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scrollPane = new JScrollPane(bookingList);
 
+        // Listeners für Auswahl in der Buchungsliste
         bookingList.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -125,6 +79,7 @@ public class HotelBookingSystem extends JFrame {
             }
         });
 
+        // MouseListener für Klicks in der Buchungsliste
         bookingList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -136,9 +91,11 @@ public class HotelBookingSystem extends JFrame {
             }
         });
 
+        // Panel für Eingabefelder
         JPanel inputPanel = new JPanel();
         inputPanel.setLayout(new GridLayout(5, 2));
 
+        // Initialisierung der GUI-Komponenten für Eingabe
         JLabel nameLabel = new JLabel("Firstname Lastname:");
         nameField = new JTextField();
         JLabel roomLabel = new JLabel("Room Type:");
@@ -151,6 +108,7 @@ public class HotelBookingSystem extends JFrame {
         JLabel personsLabel = new JLabel("Number of Persons:");
         personsField = new JTextField();
 
+        // Hinzufügen der GUI-Komponenten zum Eingabe-Panel
         inputPanel.add(nameLabel);
         inputPanel.add(nameField);
         inputPanel.add(roomLabel);
@@ -162,6 +120,7 @@ public class HotelBookingSystem extends JFrame {
         inputPanel.add(personsLabel);
         inputPanel.add(personsField);
 
+        // Initialisierung der Buttons und deren ActionListener
         addButton = new JButton("Add Booking");
         cancelButton = new JButton("Cancel Booking");
         editButton = new JButton("Edit Booking");
@@ -170,18 +129,15 @@ public class HotelBookingSystem extends JFrame {
         showAvailabilityButton = new JButton("Show Availability");
         adminLogoutButton.setVisible(false);
 
+        // ActionListener für die Buttons
         addButton.addActionListener(e -> addBooking());
-
         cancelButton.addActionListener(e -> cancelBooking());
-
         editButton.addActionListener(e -> editBooking());
-
         adminLoginButton.addActionListener(e -> adminLogin());
-
         adminLogoutButton.addActionListener(e -> adminLogout());
-
         showAvailabilityButton.addActionListener(e -> showAvailability());
 
+        // Panel für die Buttons
         buttonPanel = new JPanel(new GridLayout(0, 6)); // 0 Zeilen, 6 Spalten
         buttonPanel.add(addButton);
         buttonPanel.add(cancelButton);
@@ -190,11 +146,15 @@ public class HotelBookingSystem extends JFrame {
         buttonPanel.add(adminLoginButton);
         buttonPanel.add(adminLogoutButton);
 
+        // Hinzufügen der GUI-Komponenten zum Hauptfenster
         add(scrollPane, BorderLayout.CENTER);
         add(inputPanel, BorderLayout.SOUTH);
         add(buttonPanel, BorderLayout.NORTH);
     }
 
+    /**
+     * Leert die Eingabefelder.
+     */
     private void clearFields() {
         nameField.setText("");
         roomComboBox.setSelectedIndex(0);
@@ -203,8 +163,12 @@ public class HotelBookingSystem extends JFrame {
         personsField.setText("");
     }
 
-
+    /**
+     * Validiert die Eingabefelder für eine neue Buchung.
+     * @return true, wenn die Eingaben gültig sind, sonst false.
+     */
     private boolean validateFields() {
+        // Validierungslogik für Name, Datum, Personenanzahl, usw.
         String datePattern = "\\d{2}-\\d{2}-\\d{4}";
         if (nameField.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter first name and last name", "Error", JOptionPane.ERROR_MESSAGE);
@@ -280,8 +244,14 @@ public class HotelBookingSystem extends JFrame {
         return true;
     }
 
+    /**
+     * Prüft, ob eine gegebene Zimmerkapazität für die Anzahl von Personen ausreicht.
+     * @param roomType Der Typ des Zimmers.
+     * @param persons Die Anzahl der Personen.
+     * @return true, wenn die Zimmerkapazität ausreicht, sonst false.
+     */
     private boolean isValidRoomCapacity(String roomType, int persons) {
-        // Kapazitäten der verschiedenen Zimmertypen
+        // Prüfung der Kapazität für verschiedene Zimmerarten
         int capacity;
 
         if (roomType.equals("Single (1 Person) (" + singlePrice + "€)")) {
@@ -296,8 +266,15 @@ public class HotelBookingSystem extends JFrame {
         return persons <= capacity;
     }
 
-
+    /**
+     * Prüft, ob ein gegebenes Datum in der Zukunft liegt.
+     * @param day Der Tag.
+     * @param month Der Monat.
+     * @param year Das Jahr.
+     * @return true, wenn das Datum in der Zukunft liegt, sonst false.
+     */
     private boolean isFutureDate(int day, int month, int year) {
+        // Prüfung, ob das Datum in der Zukunft liegt
         java.util.Calendar calendar = java.util.Calendar.getInstance();
         int currentYear = calendar.get(java.util.Calendar.YEAR);
         int currentMonth = calendar.get(java.util.Calendar.MONTH) + 1; // Monat ist 0-basiert
@@ -315,7 +292,18 @@ public class HotelBookingSystem extends JFrame {
         return false;
     }
 
+    /**
+     * Prüft, ob das Enddatum nach dem Startdatum liegt.
+     * @param dayFrom Der Tag des Startdatums.
+     * @param monthFrom Der Monat des Startdatums.
+     * @param yearFrom Das Jahr des Startdatums.
+     * @param dayTo Der Tag des Enddatums.
+     * @param monthTo Der Monat des Enddatums.
+     * @param yearTo Das Jahr des Enddatums.
+     * @return true, wenn das Enddatum nach dem Startdatum liegt, sonst false.
+     */
     private boolean isDateAfter(int dayFrom, int monthFrom, int yearFrom, int dayTo, int monthTo, int yearTo) {
+        // Prüfung, ob das Enddatum nach dem Startdatum liegt
         java.util.Calendar calendar = java.util.Calendar.getInstance();
         calendar.set(yearFrom, monthFrom - 1, dayFrom); // Monat ist 0-basiert
         Date dateFrom = calendar.getTime();
@@ -326,7 +314,14 @@ public class HotelBookingSystem extends JFrame {
         return dateTo.after(dateFrom);
     }
 
+    /**
+     * Berechnet die Anzahl der Nächte zwischen zwei Datumsangaben.
+     * @param dateFrom Das Startdatum.
+     * @param dateTo Das Enddatum.
+     * @return Die Anzahl der Nächte zwischen den beiden Datumsangaben.
+     */
     public int getNumberOfNights(String dateFrom, String dateTo) {
+        // Berechnung der Anzahl der Nächte zwischen zwei Datumsangaben
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         try {
             Date fromDate = sdf.parse(dateFrom);
@@ -339,8 +334,14 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Berechnet den Gesamtpreis für eine Buchung basierend auf Zimmertyp und Anzahl der Nächte.
+     * @param roomType Der Typ des Zimmers.
+     * @param nights Die Anzahl der Nächte.
+     * @return Der Gesamtpreis für die Buchung.
+     */
     private int calculatePrice(String roomType, int nights) {
-
+        // Berechnung des Gesamtpreises für eine Buchung
         int price = 0;
 
         for (int i = 0; i < nights; i++) {
@@ -357,7 +358,11 @@ public class HotelBookingSystem extends JFrame {
         return price;
     }
 
+    /**
+     * Fügt eine neue Buchung hinzu.
+     */
     private void addBooking() {
+        // Logik zum Hinzufügen einer neuen Buchung
         if (!validateFields()) return;
 
         String[] names = nameField.getText().split("\\s+");
@@ -397,7 +402,11 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Storniert eine bestehende Buchung.
+     */
     private void cancelBooking() {
+        // Logik zum Stornieren einer Buchung
         int selectedIndex = bookingList.getSelectedIndex();
         if (selectedIndex != -1) {
             Booking selectedBooking = bookingList.getSelectedValue();
@@ -407,7 +416,11 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Bearbeitet eine bestehende Buchung.
+     */
     private void editBooking() {
+        // Logik zum Bearbeiten einer Buchung
         if (!validateFields()) return;
 
         int selectedIndex = bookingList.getSelectedIndex();
@@ -429,7 +442,11 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Wechselt den Admin-Modus ein.
+     */
     private void adminLogin() {
+        // Logik zum Wechseln in den Admin-Modus
         String password = JOptionPane.showInputDialog("Enter Admin Password:");
         if (password != null && password.equals("admin")) {
             isAdmin = true;
@@ -439,11 +456,19 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Beendet den Admin-Modus.
+     */
     private void adminLogout() {
+        // Logik zum Beenden des Admin-Modus
         isAdmin = false;
         toggleAdminView();
     }
 
+    /**
+     * Filtert die Buchungsliste nach einem gegebenen index.
+     * @param index Der index, nach dem gefiltert werden soll.
+     */
     private void filterBookings(int index) {
         bookingListModel.clear();
         for (Booking booking : allBookings) {
@@ -453,7 +478,11 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Zeigt die Verfügbarkeit der Zimmer an.
+     */
     private void showAvailability() {
+        // Logik zum Anzeigen der Zimmerverfügbarkeit
         String roomType = (String) roomComboBox.getSelectedItem();
         String dateFrom = dateFromField.getText();
         String dateTo = dateToField.getText();
@@ -476,6 +505,10 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Gibt eine Liste der verfügbaren Zimmer zurück, basierend auf der aktuellen Buchungssituation.
+     * @return Eine Liste der verfügbaren Zimmer.
+     */
     private int getAvailableRooms(String roomType, Date fromDate, Date toDate) {
         for (Room room : roomAvailability) {
             if (room.type.equals(roomType)) {
@@ -501,19 +534,10 @@ public class HotelBookingSystem extends JFrame {
         return -1; // Room type not found
     }
 
-    /*private void updateRoomAvailability(Booking booking, boolean addBooking) {
-        for (Room room : roomAvailability) {
-            if (room.type.equals(booking.roomType)) {
-                if (addBooking) {
-                    //room.quantity--; // Zimmeranzahl reduzieren, wenn Buchung hinzugefügt wird
-                } else {
-                    //room.quantity++; // Zimmeranzahl erhöhen, wenn Buchung storniert wird
-                }
-                return; // Zimmerart gefunden und aktualisiert, daher Abbruch der Schleife
-            }
-        }
-    }*/
-
+    /**
+     * Schaltet zwischen Admin- und Benutzeransicht um.
+     * Aktualisiert die Sichtbarkeit der Admin-spezifischen UI-Elemente.
+     */
     private void toggleAdminView() {
         if (isAdmin) {
             bookingListModel.clear();
@@ -531,7 +555,12 @@ public class HotelBookingSystem extends JFrame {
         }
     }
 
+    /**
+     * Hauptmethode, die das Hotel-Buchungssystem startet.
+     * @param args Die Kommandozeilenargumente (werden nicht verwendet).
+     */
     public static void main(String[] args) {
+        // Startet das Hotel-Buchungssystem
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
