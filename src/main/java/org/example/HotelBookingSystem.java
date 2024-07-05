@@ -16,22 +16,26 @@ class Booking {
     String roomType;
     String dateFrom;
     String dateTo;
+    int persons;
+    int price;
     int index;
 
-    Booking(String name, String roomType, String dateFrom, String dateTo, int index) {
+    Booking(String name, String roomType, String dateFrom, String dateTo, int persons, int price, int index) {
         this.name = name;
         this.roomType = roomType;
         this.dateFrom = dateFrom;
         this.dateTo = dateTo;
+        this.persons = persons;
         this.index = index;
+        this.price = price;
     }
 
     @Override
     public String toString() {
-        return "[Name: " + name + "] [Roomtype: " + roomType + "] [Date: " + dateFrom + " to " + dateTo + "] [Index: " + index + "] (" + getNumberOfNights() + " nights)";
+        return "[Name: " + name + "] [Roomtype: " + roomType + "] [Date: " + dateFrom + " to " + dateTo + "] [Persons: " + persons + "] [Price: " + price + "] [Index: " + index + "] (" + getNumberOfNights() + " nights)";
     }
 
-    private int getNumberOfNights() {
+    public int getNumberOfNights() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         try {
             Date fromDate = sdf.parse(dateFrom);
@@ -74,6 +78,7 @@ public class HotelBookingSystem extends JFrame {
     private JComboBox<String> roomComboBox;
     private JTextField dateFromField;
     private JTextField dateToField;
+    private JTextField personsField;
     private JButton addButton;
     private JButton cancelButton;
     private JButton editButton;
@@ -84,6 +89,9 @@ public class HotelBookingSystem extends JFrame {
     private ArrayList<Booking> allBookings = new ArrayList<>();
     private List<Room> roomAvailability = new ArrayList<>();
     private JPanel buttonPanel;
+    private int singlePrice = 150;
+    private int doublePrice = 250;
+    private int suitePrice = 400;
 
     public HotelBookingSystem() {
         setTitle("Hotel Booking System");
@@ -92,9 +100,9 @@ public class HotelBookingSystem extends JFrame {
         setLayout(new BorderLayout());
 
         // Initialisierung der Zimmerverfügbarkeit
-        roomAvailability.add(new Room("Single", 10));
-        roomAvailability.add(new Room("Double", 6));
-        roomAvailability.add(new Room("Suite", 4));
+        roomAvailability.add(new Room("Single (1 Person) (" + singlePrice + "€)", 10));
+        roomAvailability.add(new Room("Double (2 Persons) ("+ doublePrice + "€)", 6));
+        roomAvailability.add(new Room("Suite (4 Persons) ("+ suitePrice +"€)", 4));
 
         bookingListModel = new DefaultListModel<>();
         bookingList = new JList<>(bookingListModel);
@@ -111,6 +119,7 @@ public class HotelBookingSystem extends JFrame {
                         roomComboBox.setSelectedItem(selectedBooking.roomType);
                         dateFromField.setText(selectedBooking.dateFrom);
                         dateToField.setText(selectedBooking.dateTo);
+                        personsField.setText(String.valueOf(selectedBooking.persons));
                     }
                 }
             }
@@ -133,12 +142,14 @@ public class HotelBookingSystem extends JFrame {
         JLabel nameLabel = new JLabel("Firstname Lastname:");
         nameField = new JTextField();
         JLabel roomLabel = new JLabel("Room Type:");
-        String[] roomTypes = {"Single", "Double", "Suite"};
+        String[] roomTypes = {"Single (1 Person) (" + singlePrice + "€)", "Double (2 Persons) (" + doublePrice + "€)", "Suite (4 Persons) (" + suitePrice + "€)"};
         roomComboBox = new JComboBox<>(roomTypes);
         JLabel dateFromLabel = new JLabel("Date From (dd-mm-yyyy):");
         dateFromField = new JTextField();
         JLabel dateToLabel = new JLabel("Date To (dd-mm-yyyy):");
         dateToField = new JTextField();
+        JLabel personsLabel = new JLabel("Number of Persons:");
+        personsField = new JTextField();
 
         inputPanel.add(nameLabel);
         inputPanel.add(nameField);
@@ -148,6 +159,8 @@ public class HotelBookingSystem extends JFrame {
         inputPanel.add(dateFromField);
         inputPanel.add(dateToLabel);
         inputPanel.add(dateToField);
+        inputPanel.add(personsLabel);
+        inputPanel.add(personsField);
 
         addButton = new JButton("Add Booking");
         cancelButton = new JButton("Cancel Booking");
@@ -169,7 +182,7 @@ public class HotelBookingSystem extends JFrame {
 
         showAvailabilityButton.addActionListener(e -> showAvailability());
 
-        buttonPanel = new JPanel(new GridLayout(0, 6)); // 0 Zeilen, 3 Spalten
+        buttonPanel = new JPanel(new GridLayout(0, 6)); // 0 Zeilen, 6 Spalten
         buttonPanel.add(addButton);
         buttonPanel.add(cancelButton);
         buttonPanel.add(editButton);
@@ -187,7 +200,9 @@ public class HotelBookingSystem extends JFrame {
         roomComboBox.setSelectedIndex(0);
         dateFromField.setText("");
         dateToField.setText("");
+        personsField.setText("");
     }
+
 
     private boolean validateFields() {
         String datePattern = "\\d{2}-\\d{2}-\\d{4}";
@@ -242,8 +257,45 @@ public class HotelBookingSystem extends JFrame {
             return false;
         }
 
+        int persons;
+        try {
+            persons = Integer.parseInt(personsField.getText()); // Validierung der Personenanzahl
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid number for persons", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (persons <= 0) {
+            JOptionPane.showMessageDialog(this, "Number of persons must be greater than 0", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        String roomType = (String) roomComboBox.getSelectedItem();
+        if (!isValidRoomCapacity(roomType, persons)) {
+            JOptionPane.showMessageDialog(this, "The number of persons exceeds the capacity of the selected room type", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+
         return true;
     }
+
+    private boolean isValidRoomCapacity(String roomType, int persons) {
+        // Kapazitäten der verschiedenen Zimmertypen
+        int capacity;
+
+        if (roomType.equals("Single (1 Person) (" + singlePrice + "€)")) {
+            capacity = 1;
+        } else if (roomType.equals("Double (2 Persons) (" + doublePrice + "€)")) {
+            capacity = 2;
+        } else if (roomType.equals("Suite (4 Persons) (" + suitePrice + "€)")) {
+            capacity = 4;
+        } else {
+            return false;
+        }
+        return persons <= capacity;
+    }
+
 
     private boolean isFutureDate(int day, int month, int year) {
         java.util.Calendar calendar = java.util.Calendar.getInstance();
@@ -274,6 +326,37 @@ public class HotelBookingSystem extends JFrame {
         return dateTo.after(dateFrom);
     }
 
+    public int getNumberOfNights(String dateFrom, String dateTo) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        try {
+            Date fromDate = sdf.parse(dateFrom);
+            Date toDate = sdf.parse(dateTo);
+            long diff = toDate.getTime() - fromDate.getTime();
+            return (int) (diff / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    private int calculatePrice(String roomType, int nights) {
+
+        int price = 0;
+
+        for (int i = 0; i < nights; i++) {
+            if (roomType.equals("Single (1 Person) (" + singlePrice + "€)")) {
+                price += singlePrice;
+            } else if (roomType.equals("Double (2 Persons) (" + doublePrice + "€)")) {
+                price += doublePrice;
+            } else if (roomType.equals("Suite (4 Persons) (" + suitePrice + "€)")) {
+                price += suitePrice;
+            } else {
+                return -1;
+            }
+        }
+        return price;
+    }
+
     private void addBooking() {
         if (!validateFields()) return;
 
@@ -285,15 +368,33 @@ public class HotelBookingSystem extends JFrame {
         String dateFrom = dateFromField.getText();
         String dateTo = dateToField.getText();
         int index = isAdmin ? 1 : 0;
+        int persons = Integer.parseInt(personsField.getText()); // Erhalten der Personenanzahl
 
-        Booking newBooking = new Booking(firstName + " " + lastName, roomType, dateFrom, dateTo, index);
-        allBookings.add(newBooking);
-        if (isAdmin || firstName.equals("current_user")) { // Ersetzen Sie "current_user" durch den aktuellen Benutzernamen
-            bookingListModel.addElement(newBooking);
+        int nights = getNumberOfNights(dateFrom, dateTo);
+        int price = calculatePrice(roomType, nights);
+
+        int availableRooms = 0;
+        try{
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+            Date fromDate = sdf.parse(dateFrom);
+            Date toDate = sdf.parse(dateTo);
+            availableRooms = getAvailableRooms(roomType, fromDate, toDate);
+        } catch (ParseException e) {
+            JOptionPane.showMessageDialog(this, "Please enter dates in the format dd-mm-yyyy", "Error", JOptionPane.ERROR_MESSAGE);
         }
-        //updateRoomAvailability(newBooking, true); // Aktualisieren der Zimmerverfügbarkeit
-        clearFields();
-        filterBookings(index);
+
+        if(availableRooms > 0) {
+            Booking newBooking = new Booking(firstName + " " + lastName, roomType, dateFrom, dateTo, persons, price, index);
+            allBookings.add(newBooking);
+            //if (isAdmin || firstName.equals("current_user")) { // Ersetzen Sie "current_user" durch den aktuellen Benutzernamen
+            bookingListModel.addElement(newBooking);
+            //}
+            //updateRoomAvailability(newBooking, true); // Aktualisieren der Zimmerverfügbarkeit
+            clearFields();
+            filterBookings(index);
+        } else {
+            JOptionPane.showMessageDialog(this, "No rooms of this type available anymore.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void cancelBooking() {
@@ -365,6 +466,8 @@ public class HotelBookingSystem extends JFrame {
             int availableRooms = getAvailableRooms(roomType, fromDate, toDate);
             if (availableRooms == -1) {
                 JOptionPane.showMessageDialog(this, "Invalid date range or room type", "Error", JOptionPane.ERROR_MESSAGE);
+            } else if(availableRooms == 0) {
+                JOptionPane.showMessageDialog(this, "No rooms of this type available anymore.", "Error", JOptionPane.ERROR_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this, "Available " + roomType + " rooms: " + availableRooms, "Availability", JOptionPane.INFORMATION_MESSAGE);
             }
