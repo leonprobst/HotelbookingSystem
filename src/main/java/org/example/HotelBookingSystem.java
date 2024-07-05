@@ -30,11 +30,12 @@ public class HotelBookingSystem extends JFrame {
     private JButton adminLoginButton;
     private JButton adminLogoutButton;
     private JButton showAvailabilityButton;
+    private DateSystem dateSystem;
 
     // Zustände und Daten für das Hotel-Buchungssystem
     private boolean isAdmin = false;
     private ArrayList<Booking> allBookings = new ArrayList<>();
-    private List<Room> roomAvailability = new ArrayList<>();
+    private ArrayList<Room> roomAvailability = new ArrayList<>();
     private JPanel buttonPanel;
     private int singlePrice = 150;
     private int doublePrice = 250;
@@ -50,6 +51,9 @@ public class HotelBookingSystem extends JFrame {
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        // Initialisierung des Datesystems
+        dateSystem = new DateSystem();
 
         // Initialisierung der Zimmerverfügbarkeit
         roomAvailability.add(new Room("Single (1 Person) (" + singlePrice + "€)", 10));
@@ -179,8 +183,9 @@ public class HotelBookingSystem extends JFrame {
             JOptionPane.showMessageDialog(this, "Please enter first name and last name separated by space", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        String firstName = names[0];
-        String lastName = names[1];
+
+        // String firstName = names[0];
+        // String lastName = names[1];
 
         if (dateFromField.getText().isEmpty() || dateToField.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill in all date fields", "Error", JOptionPane.ERROR_MESSAGE);
@@ -210,13 +215,13 @@ public class HotelBookingSystem extends JFrame {
         int yearTo = Integer.parseInt(dateToParts[2]);
 
         // Überprüfung, ob das Datum in der Zukunft liegt
-        if (!isFutureDate(dayFrom, monthFrom, yearFrom) || !isFutureDate(dayTo, monthTo, yearTo)) {
+        if (!dateSystem.isFutureDate(dayFrom, monthFrom, yearFrom) || !dateSystem.isFutureDate(dayTo, monthTo, yearTo)) {
             JOptionPane.showMessageDialog(this, "Please enter future dates", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
         // Überprüfung, ob dateTo mindestens 1 Tag nach dateFrom liegt
-        if (!isDateAfter(dayFrom, monthFrom, yearFrom, dayTo, monthTo, yearTo)) {
+        if (!dateSystem.isDateAfter(dayFrom, monthFrom, yearFrom, dayTo, monthTo, yearTo)) {
             JOptionPane.showMessageDialog(this, "dateTo must be at least 1 day after dateFrom", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
@@ -264,54 +269,6 @@ public class HotelBookingSystem extends JFrame {
             return false;
         }
         return persons <= capacity;
-    }
-
-    /**
-     * Prüft, ob ein gegebenes Datum in der Zukunft liegt.
-     * @param day Der Tag.
-     * @param month Der Monat.
-     * @param year Das Jahr.
-     * @return true, wenn das Datum in der Zukunft liegt, sonst false.
-     */
-    private boolean isFutureDate(int day, int month, int year) {
-        // Prüfung, ob das Datum in der Zukunft liegt
-        java.util.Calendar calendar = java.util.Calendar.getInstance();
-        int currentYear = calendar.get(java.util.Calendar.YEAR);
-        int currentMonth = calendar.get(java.util.Calendar.MONTH) + 1; // Monat ist 0-basiert
-        int currentDay = calendar.get(java.util.Calendar.DAY_OF_MONTH);
-
-        if (year > currentYear) {
-            return true;
-        } else if (year == currentYear) {
-            if (month > currentMonth) {
-                return true;
-            } else if (month == currentMonth) {
-                return day >= currentDay;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Prüft, ob das Enddatum nach dem Startdatum liegt.
-     * @param dayFrom Der Tag des Startdatums.
-     * @param monthFrom Der Monat des Startdatums.
-     * @param yearFrom Das Jahr des Startdatums.
-     * @param dayTo Der Tag des Enddatums.
-     * @param monthTo Der Monat des Enddatums.
-     * @param yearTo Das Jahr des Enddatums.
-     * @return true, wenn das Enddatum nach dem Startdatum liegt, sonst false.
-     */
-    private boolean isDateAfter(int dayFrom, int monthFrom, int yearFrom, int dayTo, int monthTo, int yearTo) {
-        // Prüfung, ob das Enddatum nach dem Startdatum liegt
-        java.util.Calendar calendar = java.util.Calendar.getInstance();
-        calendar.set(yearFrom, monthFrom - 1, dayFrom); // Monat ist 0-basiert
-        Date dateFrom = calendar.getTime();
-
-        calendar.set(yearTo, monthTo - 1, dayTo);
-        Date dateTo = calendar.getTime();
-
-        return dateTo.after(dateFrom);
     }
 
     /**
@@ -391,10 +348,7 @@ public class HotelBookingSystem extends JFrame {
         if(availableRooms > 0) {
             Booking newBooking = new Booking(firstName + " " + lastName, roomType, dateFrom, dateTo, persons, price, index);
             allBookings.add(newBooking);
-            //if (isAdmin || firstName.equals("current_user")) { // Ersetzen Sie "current_user" durch den aktuellen Benutzernamen
             bookingListModel.addElement(newBooking);
-            //}
-            //updateRoomAvailability(newBooking, true); // Aktualisieren der Zimmerverfügbarkeit
             clearFields();
             filterBookings(index);
         } else {
@@ -437,32 +391,8 @@ public class HotelBookingSystem extends JFrame {
             selectedBooking.index = isAdmin ? 1 : 0;
 
             bookingList.repaint();
-            //updateRoomAvailability(selectedBooking, true); // Aktualisieren der Zimmerverfügbarkeit
             clearFields();
         }
-    }
-
-    /**
-     * Wechselt den Admin-Modus ein.
-     */
-    private void adminLogin() {
-        // Logik zum Wechseln in den Admin-Modus
-        String password = JOptionPane.showInputDialog("Enter Admin Password:");
-        if (password != null && password.equals("admin")) {
-            isAdmin = true;
-            toggleAdminView();
-        } else {
-            JOptionPane.showMessageDialog(null, "Incorrect password!");
-        }
-    }
-
-    /**
-     * Beendet den Admin-Modus.
-     */
-    private void adminLogout() {
-        // Logik zum Beenden des Admin-Modus
-        isAdmin = false;
-        toggleAdminView();
     }
 
     /**
@@ -532,6 +462,29 @@ public class HotelBookingSystem extends JFrame {
             }
         }
         return -1; // Room type not found
+    }
+
+    /**
+     * Wechselt den Admin-Modus ein.
+     */
+    private void adminLogin() {
+        // Logik zum Wechseln in den Admin-Modus
+        String password = JOptionPane.showInputDialog("Enter Admin Password:");
+        if (password != null && password.equals("admin")) {
+            isAdmin = true;
+            toggleAdminView();
+        } else {
+            JOptionPane.showMessageDialog(null, "Incorrect password!");
+        }
+    }
+
+    /**
+     * Beendet den Admin-Modus.
+     */
+    private void adminLogout() {
+        // Logik zum Beenden des Admin-Modus
+        isAdmin = false;
+        toggleAdminView();
     }
 
     /**
